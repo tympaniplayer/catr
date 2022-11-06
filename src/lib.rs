@@ -1,5 +1,5 @@
 use clap::{Arg, ArgAction, Command};
-use std::error::Error;
+use std::{error::Error, io::{self, BufReader, BufRead}, fs::File};
 
 #[derive(Debug)]
 pub struct Config {
@@ -20,13 +20,14 @@ pub fn get_args() -> MyResult<Config> {
                 .value_name("FILE")
                 .help("Input file(s)")
                 .num_args(1..)
-                .required(true),
+                .default_value("-"),
         )
         .arg(
             Arg::new("number")
                 .short('n')
                 .help("Number lines")
-                .action(ArgAction::SetTrue),
+                .action(ArgAction::SetTrue)
+                .conflicts_with("number-nonblank"),
         )
         .arg(
             Arg::new("number-nonblank")
@@ -48,6 +49,18 @@ pub fn get_args() -> MyResult<Config> {
 }
 
 pub fn run(config: Config) -> MyResult<()> {
-    dbg!(config);
+    for filename in config.files {
+        match open(&filename) {
+            Err(err) => eprintln!("Failed to open {}: {}", filename, err),
+            Ok(_) => println!("Opened {}", filename),
+        }
+    }
     Ok(())
+}
+
+fn open (filename: &str) -> MyResult<Box<dyn BufRead>> {
+    match filename {
+        "-" => Ok(Box::new(BufReader::new(io::stdin()))),
+        _ => Ok(Box::new(BufReader::new(File::open(filename)?)))
+    }
 }
