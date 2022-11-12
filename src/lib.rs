@@ -1,5 +1,9 @@
 use clap::{Arg, ArgAction, Command};
-use std::{error::Error, io::{self, BufReader, BufRead}, fs::File};
+use std::{
+    error::Error,
+    fs::File,
+    io::{self, BufRead, BufReader},
+};
 
 #[derive(Debug)]
 pub struct Config {
@@ -52,15 +56,25 @@ pub fn run(config: Config) -> MyResult<()> {
     for filename in config.files {
         match open(&filename) {
             Err(err) => eprintln!("Failed to open {}: {}", filename, err),
-            Ok(_) => println!("Opened {}", filename),
+            Ok(file) => {
+                let mut i: usize = 1;
+                for line in file.lines() {
+                    if config.number_lines {
+                        println!("{} {}", i, line.unwrap());
+                    } else {
+                        println!("{}", line.unwrap());
+                    }
+                    i += 1;
+                }
+            }
         }
     }
     Ok(())
 }
 
-fn open (filename: &str) -> MyResult<Box<dyn BufRead>> {
+fn open(filename: &str) -> MyResult<Box<dyn BufRead>> {
     match filename {
         "-" => Ok(Box::new(BufReader::new(io::stdin()))),
-        _ => Ok(Box::new(BufReader::new(File::open(filename)?)))
+        _ => Ok(Box::new(BufReader::new(File::open(filename)?))),
     }
 }
