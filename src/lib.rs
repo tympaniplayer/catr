@@ -17,7 +17,7 @@ type MyResult<T> = Result<T, Box<dyn Error>>;
 pub fn get_args() -> MyResult<Config> {
     let matches = Command::new("catr")
         .version("0.1.0")
-        .author("Nate Palmer <nate@natepalmer.dev")
+        .author("Nate Palmer rust@natedpalm.com")
         .about("Rust cat")
         .arg(
             Arg::new("file")
@@ -29,6 +29,7 @@ pub fn get_args() -> MyResult<Config> {
         .arg(
             Arg::new("number")
                 .short('n')
+                .long("number")
                 .help("Number lines")
                 .action(ArgAction::SetTrue)
                 .conflicts_with("number-nonblank"),
@@ -36,6 +37,7 @@ pub fn get_args() -> MyResult<Config> {
         .arg(
             Arg::new("number-nonblank")
                 .short('b')
+                .long("number-nonblank")
                 .help("Number nonblank lines")
                 .action(ArgAction::SetTrue),
         )
@@ -59,12 +61,15 @@ pub fn run(config: Config) -> MyResult<()> {
             Ok(file) => {
                 let mut i: usize = 1;
                 for line in file.lines() {
-                    if config.number_lines {
-                        println!("{} {}", i, line.unwrap());
+                    let line = line.unwrap();
+                    if config.number_lines || (config.number_nonblank_lines && line.len() > 0) {
+                        println!("{:>6}\t{}", i, line);
                     } else {
-                        println!("{}", line.unwrap());
+                        println!("{}", line);
                     }
-                    i += 1;
+                    if !config.number_nonblank_lines || (config.number_nonblank_lines && line.len() > 0) {
+                        i += 1;
+                    }
                 }
             }
         }
